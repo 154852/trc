@@ -6,7 +6,9 @@ use crate::tracer::{AddrBreakpoint, Tracer, Breakpoint, StopCause};
 
 pub struct Symbol {
     addr: u64,
+	size: u64,
     file: String,
+	name: String,
 	pie: bool
 }
 
@@ -29,7 +31,9 @@ impl Symbol {
 					if symbol.value != 0 {
 						symbols.insert(symbol.name.clone(), Symbol {
 							addr: symbol.value,
+							size: symbol.size,
 							file: path.to_owned(),
+							name: symbol.name.clone(),
 							pie
 						});
 					}
@@ -38,6 +42,10 @@ impl Symbol {
 		}
 	
 		Ok(())
+	}
+
+	pub fn name(&self) -> &str {
+		&self.name
 	}
 }
 
@@ -398,5 +406,18 @@ impl Debugger {
 
 	pub fn path(&self) -> &str {
 		&self.path
+	}
+
+	pub fn find_sym_for(&self, addr: u64) -> Result<Option<&Symbol>, DebuggerError> {
+		// FIXME probably a way to do this faster than O(n)
+
+		for symbol in self.symbols.values() {
+			let sym_addr =  symbol.map(&self.maps)?;
+			if addr >= sym_addr && addr < sym_addr + symbol.size {
+				return Ok(Some(symbol));
+			}
+		}
+
+		Ok(None)
 	}
 }

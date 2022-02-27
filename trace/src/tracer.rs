@@ -80,6 +80,9 @@ impl Tracer {
 			},
 			unistd::ForkResult::Child => {
 				ptrace::traceme().expect("Could not traceme");
+
+				// FIXME make this an option, not always on
+				nix::sys::personality::set(nix::sys::personality::get().expect("Could not get personality") | nix::sys::personality::Persona::ADDR_NO_RANDOMIZE).expect("Could not set personality");
 	
 				let cstring = CString::new(path).unwrap();
 				let err = nix::unistd::execv(&cstring, &[&cstring]).unwrap_err();
