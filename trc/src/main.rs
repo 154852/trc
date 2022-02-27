@@ -59,6 +59,10 @@ fn build_commands() -> cmd::CommandSet {
                 .cmd(cmd::Command::new('r', |dbg, parser| cmd_memory_read(dbg, parser)).describe("read from memory").op_type().num().expr("addr"))
                 .cmd(cmd::Command::new('w', |_, _| todo!()).describe("write to memory").op_type().num().expr("addr").expr("value"))
         )
+        .ns(
+            cmd::Namespace::new('s', "Stack")
+                .cmd(cmd::Command::new('b', |dbg, _| cmd_stack_backtrace(dbg)).describe("Display backtrace"))
+        )
 }
 
 fn main() {
@@ -163,7 +167,6 @@ macro_rules! present_debugger {
         }
     };
 }
-
 
 fn cmd_process_pid(debugger: &mut Option<debugger::Debugger>) {
     let debugger = present_debugger!(debugger);
@@ -448,5 +451,72 @@ fn cmd_memory_read(debugger: &mut Option<debugger::Debugger>, mut parser: cmd::C
 
             if num % 32 != 0 { eprintln!() }
         },
+    }
+}
+
+fn cmd_stack_backtrace(debugger: &mut Option<debugger::Debugger>) {
+    let debugger = alive_debugger!(debugger);
+
+    // FIXME what if we are in the start of a function, before endbr64/push rbp/mov rbp, rsp?
+
+    let (mut frame_base_ptr, start_rip) = match debugger.regs() {
+        Ok(regs) => (regs.rbp, regs.rip),
+        Err(err) => {
+            pretty_print_err(err, "Could not pretty print error", ErrAction::Nothing);
+            return;
+        }
+    };
+
+    match debugger.refresh_maps() {
+        Ok(_) => {},
+        Err(err) => {
+            pretty_print_err(err, "Could not refresh maps", ErrAction::Nothing);
+            return;
+        }
+    }
+
+    let debug_frame = |debugger: &debugger::Debugger, addr, idx: u64| -> Result<(), ()> {
+        println!("{}  {} - {}", format!("{}", idx).bold(), format!("0x{:x}", addr).blue(), match debugger.find_sym_for(addr) {
+            Ok(Some(symbol)) => symbol.name().green(),
+            Ok(None) => "??".black(),
+            Err(err) => {
+                pretty_print_err(err, "Could not search symbols", ErrAction::Nothing);
+                return Err(());
+            }
+        });
+
+        Ok(())
+    };
+
+    match debug_frame(debugger, start_rip, 0) {
+        Ok(_) => {},
+        Err(_) => return
+    }
+
+    let mut i = 1;
+    while frame_base_ptr != 0 {
+        let next_base_ptr = match debugger.read_u64(frame_base_ptr) {
+            Ok(ptr) => ptr,
+            Err(err) => {
+                pretty_print_err(err, "Could not get next base ptr", ErrAction::Nothing);
+                return;
+            }
+        };
+
+        let next_addr = match debugger.read_u64(frame_base_ptr + 8) {
+            Ok(ptr) => ptr,
+            Err(err) => {
+                pretty_print_err(err, "Could not get next frame addr", ErrAction::Nothing);
+                return;
+            }
+        };
+
+        match debug_frame(debugger, next_addr, i) {
+            Ok(_) => {},
+            Err(_) => return
+        }
+
+        i += 1;
+        frame_base_ptr = next_base_ptr;
     }
 }
