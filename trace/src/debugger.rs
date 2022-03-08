@@ -250,6 +250,13 @@ impl Debugger {
 		Ok(())
 	}
 
+	pub fn break_on_syscall(&mut self, syscall: i64) -> Result<usize, DebuggerError> {
+		match self.tracer.add_breakpoint(Breakpoint::Syscall { syscall }) {
+			Ok(idx) => Ok(idx),
+			Err(err) => Err(DebuggerError::Nix(err))
+		}
+	}
+
 	pub fn break_at(&mut self, addr: u64) -> Result<usize, DebuggerError> {
 		match self.tracer.add_breakpoint(Breakpoint::Addr(AddrBreakpoint::new(
 			addr

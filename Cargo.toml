@@ -1,2 +1,2 @@
 [workspace]
-members = ["trace", "trc"]
+members = ["trace", "trc", "trcpy_server"]
