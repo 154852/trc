@@ -78,7 +78,7 @@ fn main() -> std::io::Result<()> {
     let mut debugger = None;
 
     // FIXME: Don't hard code path
-    let mut stream = UnixStream::connect("/tmp/trcpy")?;
+    let mut stream = UnixStream::connect("/tmp/pytrc")?;
     let mut msg = serde_json::to_string(&Response::Ok).unwrap();
     msg.push('\n');
     stream.write_all(msg.as_bytes())?;

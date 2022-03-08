@@ -1,2 +1,2 @@
 [workspace]
-members = ["trace", "trc", "trcpy_server"]
+members = ["trace", "trc", "pytrc_server"]

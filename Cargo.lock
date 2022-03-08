@@ -418,6 +418,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pytrc_server"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "nix 0.23.1",
+ "serde",
+ "serde_json",
+ "trace",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -658,17 +669,6 @@ dependencies = [
  "clap",
  "colored",
  "linefeed",
- "trace",
-]
-
-[[package]]
-name = "trcpy_server"
-version = "0.1.0"
-dependencies = [
- "base64",
- "nix 0.23.1",
- "serde",
- "serde_json",
  "trace",
 ]
 

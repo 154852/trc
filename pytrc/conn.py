@@ -5,11 +5,11 @@ import os, socket
 
 class TracerConnection:
 	def __init__(self, path, stdio=None):
-		if os.path.exists("/tmp/trcpy"):
-			os.remove("/tmp/trcpy")
+		if os.path.exists("/tmp/pytrc"):
+			os.remove("/tmp/pytrc")
 
 		self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
-		self.sock.bind("/tmp/trcpy")
+		self.sock.bind("/tmp/pytrc")
 		self.sock.listen(1)
 
 		if stdio is None: stdio = (None, None, None)
@@ -82,7 +82,7 @@ class ExitStopCause(StopCause):
 		self.status = status
 
 class Tracer:
-	def __init__(self, path="trcpy_server", stdio=None):
+	def __init__(self, path="pytrc_server", stdio=None):
 		self.conn = TracerConnection(path, stdio)
 		self.conn.ack()
 	

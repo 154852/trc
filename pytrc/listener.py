@@ -1,4 +1,4 @@
-from trcpy.conn import BreakpointStopCause, ExitStopCause, Tracer
+from pytrc.conn import BreakpointStopCause, ExitStopCause, Tracer
 
 class Breakpoint:
 	def enact(self, tracer): pass

@@ -1,6 +1,5 @@
-import trcpy
-
-from trcpy.listener import nm, sys, sysv_abi
+import pytrc
+from pytrc.listener import nm, sys, sysv_abi
 
 class Colors:
 	BLACK = "\u001b[30m"
@@ -26,9 +25,8 @@ def white(text): return Colors.WHITE + text + Colors.RESET
 	
 @sysv_abi
 def malloc(trc, size):
-	print(blue(f"[ Malloc for {size} bytes"), end="")
 	addr = trc.fin()
-	print(blue(f" => {hex(addr)} ]"))
+	print(blue(f"[ Malloc for {size} bytes => {hex(addr)} ]"))
 
 @sysv_abi
 def free(trc, addr):
@@ -36,26 +34,25 @@ def free(trc, addr):
 
 @sysv_abi
 def read(trc, fd, buf, size):
-	print(green(f"[ read({fd}, <buf>, {size}) => "))
-	trc.next()
-	print(green(f"{trc.rax()} ]"))
+	read = trc.next()
+	print(green(f"[ read({fd}, {hex(buf)}, {size}) => {read} ]"))
 
 @sysv_abi
 def write(trc, fd, buf, size):
 	string = trc.read(buf, size)
-	print(green(f"[ write({fd}, {string}, {size}) => "))
 	trc.next()
-	print(green(f"{trc.rax()} ]"))
+	written = trc.rax()
+	print(green(f"[ write({fd}, {string}, {size}) => {written} ]"))
 
-with trcpy.Tracer() as trc:
+with pytrc.Tracer() as trc:
 	trc.load("./test")
 
-	listener = trcpy.Listener(trc)
+	listener = pytrc.Listener(trc)
 	listener.wait(nm("main"))
 
 	listener.on(nm("malloc"), malloc)
 	listener.on(nm("free"), free)
-	listener.on(sys(trcpy.Syscall.READ), read)
-	listener.on(sys(trcpy.Syscall.WRITE), write)
+	listener.on(sys(pytrc.Syscall.READ), read)
+	listener.on(sys(pytrc.Syscall.WRITE), write)
 	
 	listener.run()
